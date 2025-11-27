@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Магазин іграшок</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; background:#f2f4f7; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    h1 { font-size:22px; }
+    .cart-icon { position:relative; cursor:pointer; }
+    .cart-count { position:absolute; top:-6px; right:-6px; background:red; color:#fff; padding:2px 6px; border-radius:50%; font-size:12px; }
+    .container { max-width:900px; margin:20px auto; padding:0 20px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+    .card { background:#fff; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    .card h3 { margin:0 0 6px; }
+    .btn { padding:8px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold; }
+    .btn-primary { background:#007bff; color:#fff; }
+    .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; }
+    .modal { background:#fff; padding:20px; border-radius:10px; width:300px; text-align:center; }
+    .cart-page { display:none; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    td, th { border-bottom:1px solid #ccc; padding:8px; }
+    .back-btn { margin-top:20px; display:inline-block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Іграшковий магазин</h1>
+    <div class="cart-icon" onclick="openCart()">
+      🛒
+      <span class="cart-count" id="cartCount">0</span>
+    </div>
+  </header>
+
+  <!-- СТОРІНКА ТОВАРІВ -->
+  <div class="container" id="shopPage">
+    <div class="grid" id="toyList"></div>
+  </div>
+
+  <!-- СТОРІНКА КОРЗИНИ -->
+  <div class="container cart-page" id="cartPage">
+    <h2>Корзина</h2>
+    <table id="cartTable"></table>
+    <a class="btn btn-primary" href="#" onclick="alert('Оплата успішна!')">Оплатити</a>
+    <br>
+    <a class="back-btn" href="#" onclick="backToShop()">Повернутись до покупок</a>
+  </div>
+
+  <!-- МОДАЛЬНІ ВІКНА -->
+  <div class="modal-bg" id="modalEmpty">
+    <div class="modal">
+      <p>Корзина пуста</p>
+      <button class="btn" onclick="closeModals()">OK</button>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modalQty">
+    <div class="modal">
+      <p>Вкажіть кількість:</p>
+      <input type="number" id="qtyInput" min="1" value="1">
+      <br><br>
+      <button class="btn btn-primary" onclick="confirmAdd()">Додати</button>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modalAdded">
+    <div class="modal">
+      <p>Товар додано</p>
+      <button class="btn btn-primary" onclick="goToCart()">Перейти у корзину</button>
+      <button class="btn" onclick="closeModals()">Повернутись до покупок</button>
+    </div>
+  </div>
+
+<script>
+const toys = [
+  {id:1, name:'Конструктор LEGO', price:899},
+  {id:2, name:'Мʼяка іграшка Ведмедик', price:350},
+  {id:3, name:'Машинка Hot Wheels', price:120},
+  {id:4, name:'Настільна гра UNO', price:220},
+  {id:5, name:'Лялька Барбі', price:750}
+];
+
+let cart = {};
+let selectedToy = null;
+
+function renderToys() {
+  const list = document.getElementById('toyList');
+  list.innerHTML = '';
+  toys.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `
+      <h3>${t.name}</h3>
+      <p>${t.price} грн</p>
+      <button class='btn btn-primary' onclick='addToCart(${t.id})'>Додати у корзину</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function addToCart(id) {
+  selectedToy = id;
+  document.getElementById('modalQty').style.display = 'flex';
+}
+
+function confirmAdd() {
+  const qty = Number(document.getElementById('qtyInput').value);
+  if (!cart[selectedToy]) cart[selectedToy] = 0;
+  cart[selectedToy] += qty;
+  updateCount();
+  closeModals();
+  document.getElementById('modalAdded').style.display = 'flex';
+}
+
+function updateCount() {
+  document.getElementById('cartCount').innerText = Object.keys(cart).length;
+}
+
+function openCart() {
+  if (Object.keys(cart).length === 0) {
+    document.getElementById('modalEmpty').style.display = 'flex';
+  } else {
+    showCartPage();
+  }
+}
+
+function showCartPage() {
+  document.getElementById('shopPage').style.display = 'none';
+  document.getElementById('cartPage').style.display = 'block';
+  renderCart();
+}
+
+function renderCart() {
+  const table = document.getElementById('cartTable');
+  table.innerHTML = '<tr><th>Товар</th><th>Кількість</th><th>Ціна</th></tr>';
+  for (let id in cart) {
+    const toy = toys.find(t => t.id == id);
+    table.innerHTML += `<tr>
+      <td>${toy.name}</td>
+      <td>${cart[id]}</td>
+      <td>${toy.price * cart[id]} грн</td>
+    </tr>`;
+  }
+}
+
+function goToCart() {
+  closeModals();
+  showCartPage();
+}
+
+function backToShop() {
+  document.getElementById('cartPage').style.display = 'none';
+  document.getElementById('shopPage').style.display = 'block';
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-bg').forEach(m => m.style.display = 'none');
+}
+
+renderToys();
+</script>
+
+</body>
+</html>
